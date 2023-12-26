@@ -2,6 +2,7 @@
 
 namespace GatewayService.Server.Dto;
 
+[DataContract]
 public class AuthData
 {
     [DataMember(Name = "access_token")]
