@@ -1,0 +1,41 @@
+gateway:
+  image:  
+    name: konvovden/rsoi
+    tag: api-gateway
+  ports:  
+    - name: http
+      port: 8080
+  ingress: true
+      
+carsapi:
+  image:
+    name: konvovden/rsoi
+    tag: cars-service
+  ports:
+    - name: http
+      port: 8070
+    - name: grpc
+      port: 8071
+  ingress: false
+
+paymentapi:
+  image:
+    name: konvovden/rsoi
+    tag: payment-service
+  ports:
+    - name: http
+      port: 8050
+    - name: grpc
+      port: 8051
+  ingress: false
+
+rentalapi:
+  image:
+    name: konvovden/rsoi
+    tag: rental-service
+  ports:
+    - name: http
+      port: 8060
+    - name: grpc
+      port: 8061
+  ingress: false
