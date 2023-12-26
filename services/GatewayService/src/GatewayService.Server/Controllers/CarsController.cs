@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using CarsService.Api;
+using GatewayService.AuthService.Attributes;
 using GatewayService.Dto.Cars;
 using GatewayService.Server.Dto.Converters.Cars;
+using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -26,6 +28,7 @@ public class CarsController : ControllerBase
     /// <param name="showAll"></param>
     /// <response code="200">Список доступных для бронирования автомобилей</response>
     [HttpGet]
+    [Authorize]
     [SwaggerOperation("ApiV1CarsGet")]
     [SwaggerResponse(statusCode: 200, type: typeof(CarsList), description: "Список доступных для бронирования автомобилей")]
     public async Task<IActionResult> GetCars([FromQuery]int? page, [FromQuery][Range(1, 100)]int? size, [FromQuery]bool? showAll)
@@ -39,7 +42,11 @@ public class CarsController : ControllerBase
             Page = page.Value,
             Size = size.Value,
             ShowAll = showAll.Value
-        });
+        },
+            headers: new Metadata()
+            {
+                {"Authorization", HttpContext.Request.Headers.Authorization.First()!}
+            });
 
         return Ok(CarsListConverter.Convert(response));
     }

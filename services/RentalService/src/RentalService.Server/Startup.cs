@@ -20,7 +20,11 @@ public class Startup
     {
         services.AddControllers();
         
-        services.AddGrpc(options => options.Interceptors.Add<ExceptionsHandlingInterceptor>());
+        services.AddGrpc(options =>
+        {
+            options.Interceptors.Add<AuthorizationInterceptor>();
+            options.Interceptors.Add<ExceptionsHandlingInterceptor>();
+        });
         
         services.AddDbContext<RentalServiceContext>(opt => 
                     opt.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));

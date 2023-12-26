@@ -1,8 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using CarsService.Api;
+using GatewayService.AuthService.Attributes;
+using GatewayService.AuthService.Extensions;
 using GatewayService.RetryQueue;
 using GatewayService.Server.Dto.Converters.Rental;
 using GatewayService.Server.StateMachines.RentCar;
+using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
 using PaymentService.Api;
 using RentalService.Api;
@@ -38,10 +41,13 @@ public class RentalController : ControllerBase
     /// <param name="username">Имя пользователя</param>
     /// <response code="200">Информация обо всех арендах</response>
     [HttpGet]
+    [Authorize]
     [SwaggerOperation("ApiV1RentalGet")]
     [SwaggerResponse(statusCode: 200, type: typeof(List<Rental>), description: "Информация обо всех арендах")]
-    public async Task<IActionResult> ApiV1RentalGet([FromHeader(Name = "X-User-Name")][Required]string username)
+    public async Task<IActionResult> ApiV1RentalGet()
     {
+        var username = HttpContext.GetIdentityUser().Login;
+        
         var rentals = await _rentalServiceClient.GetUserRentalsAsync(new GetUserRentalsRequest()
         {
             Username = username
@@ -75,12 +81,14 @@ public class RentalController : ControllerBase
     /// <response code="200">Информация о бронировании авто</response>
     /// <response code="400">Ошибка валидации данных</response>
     [HttpPost]
+    [Authorize]
     [SwaggerOperation("ApiV1RentalPost")]
     [SwaggerResponse(statusCode: 200, type: typeof(Rental), description: "Информация о бронировании авто")]
     [SwaggerResponse(statusCode: 400, description: "Ошибка валидации данных")]
-    public async Task<IActionResult> ApiV1RentalPost([FromHeader(Name = "X-User-Name")][Required]string username, 
-        [FromBody]CreateRentalRequest createRentalRequest)
+    public async Task<IActionResult> ApiV1RentalPost([FromBody]CreateRentalRequest createRentalRequest)
     {
+        var username = HttpContext.GetIdentityUser().Login;
+        
         var stateMachine = new RentCarStateMachine(_carsServiceClient, _paymentServiceClient, _rentalServiceClient);
 
         var rental = await stateMachine.StartAsync(username, createRentalRequest.CarId, createRentalRequest.DateFrom,
@@ -97,11 +105,13 @@ public class RentalController : ControllerBase
     /// <response code="204">Аренда успешно отменена</response>
     /// <response code="404">Аренда не найдена</response>
     [HttpDelete("{rentalId}")]
+    [Authorize]
     [SwaggerOperation("ApiV1RentalRentalUidDelete")]
     [SwaggerResponse(statusCode: 404, description: "Аренда не найдена")]
-    public async Task<IActionResult> ApiV1RentalRentalUidDelete([FromRoute][Required] string rentalId,
-        [FromHeader(Name = "X-User-Name")][Required] string username)
+    public async Task<IActionResult> ApiV1RentalRentalUidDelete([FromRoute][Required] string rentalId)
     {
+        var username = HttpContext.GetIdentityUser().Login;
+        
         var cancelRentalResponse = await _rentalServiceClient.CancelRentalAsync(new CancelRentalRequest()
         {
             Username = username,
@@ -149,21 +159,31 @@ public class RentalController : ControllerBase
     /// <response code="204">Аренда успешно завершена</response>
     /// <response code="404">Аренда не найдена</response>
     [HttpPost("{rentalId}/finish")]
+    [Authorize]
     [SwaggerOperation("ApiV1RentalRentalUidFinishPost")]
     [SwaggerResponse(statusCode: 404, description: "Аренда не найдена")]
-    public async Task<IActionResult> ApiV1RentalRentalUidFinishPost([FromRoute][Required]string rentalId,
-        [FromHeader(Name = "X-User-Name")][Required]string username)
+    public async Task<IActionResult> ApiV1RentalRentalUidFinishPost([FromRoute][Required]string rentalId)
     {
+        var username = HttpContext.GetIdentityUser().Login;
+        
         var finishRentalResponse = await _rentalServiceClient.FinishRentalAsync(new FinishRentalRequest()
         {
             Username = username,
             RentalId = rentalId
-        });
+        },
+            headers: new Metadata()
+            {
+                {"Authorization", HttpContext.Request.Headers.Authorization.First()!}
+            });
 
         await _carsServiceClient.RemoveReserveFromCarAsync(new RemoveReserveFromCarRequest()
         {
             Id = finishRentalResponse.Rental.CarId
-        });
+        },
+            headers: new Metadata()
+            {
+                {"Authorization", HttpContext.Request.Headers.Authorization.First()!}
+            });
 
         return NoContent();
     }
@@ -176,17 +196,23 @@ public class RentalController : ControllerBase
     /// <response code="200">Информация по конкретному бронированию</response>
     /// <response code="404">Билет не найден</response>
     [HttpGet("{rentalId}")]
+    [Authorize]
     [SwaggerOperation("ApiV1RentalRentalUidGet")]
     [SwaggerResponse(statusCode: 200, type: typeof(Rental), description: "Информация по конкретному бронированию")]
     [SwaggerResponse(statusCode: 404, description: "Билет не найден")]
-    public async Task<IActionResult> ApiV1RentalRentalUidGet([FromRoute][Required]string rentalId, 
-        [FromHeader(Name = "X-User-Name")][Required]string username)
+    public async Task<IActionResult> ApiV1RentalRentalUidGet([FromRoute][Required]string rentalId)
     {
+        var username = HttpContext.GetIdentityUser().Login;
+        
         var getUserRentalResponse = await _rentalServiceClient.GetUserRentalAsync(new GetUserRentalRequest()
         {
             RentalId = rentalId,
             Username = username
-        });
+        },
+            headers: new Metadata()
+            {
+                {"Authorization", HttpContext.Request.Headers.Authorization.First()!}
+            });
 
         var car = await GetCarOrDefaultAsync(getUserRentalResponse.Rental.CarId);
         var payment = await GetPaymentOrDefaultAsync(getUserRentalResponse.Rental.PaymentId);
@@ -201,7 +227,11 @@ public class RentalController : ControllerBase
             var response = await _carsServiceClient.GetCarAsync(new GetCarRequest()
             {
                 Id = carId
-            });
+            },
+                headers: new Metadata()
+                {
+                    {"Authorization", HttpContext.Request.Headers.Authorization.First()!}
+                });
 
             return response.Car;
         }
@@ -218,7 +248,11 @@ public class RentalController : ControllerBase
             var response = await _paymentServiceClient.GetPaymentAsync(new GetPaymentRequest()
             {
                 Id = paymentId
-            });
+            },
+                headers: new Metadata()
+                {
+                    {"Authorization", HttpContext.Request.Headers.Authorization.First()!}
+                });
 
             return response.Payment;
         }
@@ -235,7 +269,11 @@ public class RentalController : ControllerBase
             var response = await _carsServiceClient.GetCarsAsync(new GetCarsRequest()
             {
                 Ids = { carIds }
-            });
+            },
+                headers: new Metadata()
+                {
+                    {"Authorization", HttpContext.Request.Headers.Authorization.First()!}
+                });
 
             return response.Cars.ToList();
         }
@@ -252,7 +290,11 @@ public class RentalController : ControllerBase
             var response = await _paymentServiceClient.GetPaymentsAsync(new GetPaymentsRequest()
             {
                 Ids = { paymentIds }
-            });
+            },
+                headers: new Metadata()
+                {
+                    {"Authorization", HttpContext.Request.Headers.Authorization.First()!}
+                });
 
             return response.Payments.ToList();
         }

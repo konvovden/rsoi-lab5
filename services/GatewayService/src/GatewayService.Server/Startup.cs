@@ -1,3 +1,6 @@
+using GatewayService.AuthService;
+using GatewayService.AuthService.Configurations;
+using GatewayService.AuthService.Middlewares;
 using GatewayService.CircuitBreaker;
 using GatewayService.CircuitBreaker.Extensions;
 using GatewayService.RetryQueue.Extensions;
@@ -24,6 +27,29 @@ public class Startup
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "GatewayService.Server", Version = "v1" });
+            
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
+            
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
         });
         services.AddSwaggerGenNewtonsoftSupport();
 
@@ -55,6 +81,10 @@ public class Startup
 
         services.AddCircuitBreaker(Configuration);
         services.AddRetryQueue(Configuration);
+        
+        services.Configure<JwtConfiguration>(Configuration.GetSection("JwtConfiguration"));
+
+        services.AddTransient<IAuthService, AuthService.AuthService>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -72,9 +102,11 @@ public class Startup
         
         app.UseRouting();
 
-        app.UseAuthorization();
+        //app.UseAuthorization();
 
         app.UseMiddleware<GrpcExceptionsHandleMiddleware>();
+        app.UseMiddleware<JwtMiddleware>();
+
         
         app.UseEndpoints(endpoints =>
         {

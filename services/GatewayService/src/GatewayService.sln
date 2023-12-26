@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayService.CircuitBreak
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayService.RetryQueue", "GatewayService.RetryQueue\GatewayService.RetryQueue.csproj", "{587CE265-D95E-44D7-98BB-42B83CBAD1A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GatewayService.AuthService", "GatewayService.AuthService\GatewayService.AuthService.csproj", "{7AE2BA86-5544-4470-9C97-359A4C97B9FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,6 +26,10 @@ Global
 		{587CE265-D95E-44D7-98BB-42B83CBAD1A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{587CE265-D95E-44D7-98BB-42B83CBAD1A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{587CE265-D95E-44D7-98BB-42B83CBAD1A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7AE2BA86-5544-4470-9C97-359A4C97B9FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7AE2BA86-5544-4470-9C97-359A4C97B9FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7AE2BA86-5544-4470-9C97-359A4C97B9FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7AE2BA86-5544-4470-9C97-359A4C97B9FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

@@ -28,6 +28,7 @@
     </ItemGroup>
     
     <ItemGroup>
+      <ProjectReference Include="..\GatewayService.AuthService\GatewayService.AuthService.csproj" />
       <ProjectReference Include="..\GatewayService.CircuitBreaker\GatewayService.CircuitBreaker.csproj" />
       <ProjectReference Include="..\GatewayService.RetryQueue\GatewayService.RetryQueue.csproj" />
     </ItemGroup>
